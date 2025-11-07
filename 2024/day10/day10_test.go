@@ -76,3 +76,68 @@ func Test_part1(t *testing.T) {
 		})
 	}
 }
+
+func Test_part2(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  int
+	}{
+		{
+			name: "example",
+			input: `
+.....0.
+..4321.
+..5..2.
+..6543.
+..7..4.
+..8765.
+..9....`,
+			want: 3,
+		},
+		{
+			name: "example2",
+			input: `
+..90..9
+...1.98
+...2..7
+6543456
+765.987
+876....
+987....`,
+
+			want: 13,
+		},
+		{
+			name: "example3",
+			input: `
+012345
+123456
+234567
+345678
+4.6789
+56789.`,
+			want: 227,
+		},
+		{
+			name: "example4",
+			input: `
+89010123
+78121874
+87430965
+96549874
+45678903
+32019012
+01329801
+10456732`,
+			want: 81,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := part2(tt.input); got != tt.want {
+				t.Errorf("part2() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
