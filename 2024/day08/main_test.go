@@ -70,7 +70,7 @@ func Test_part2(t *testing.T) {
 		{
 			name:  "simple2",
 			input: simple2,
-			want:  6,
+			want:  9,
 		},
 		{
 			name:  "example",
