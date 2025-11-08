@@ -33,6 +33,10 @@ func Test_part1(t *testing.T) {
 			if got := part1(tt.input, tt.blinks); got != tt.want {
 				t.Errorf("part1() = %v, want %v", got, tt.want)
 			}
+
+			if got := part2(tt.input, tt.blinks); got != tt.want {
+				t.Errorf("part2() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
