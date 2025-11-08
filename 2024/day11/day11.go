@@ -14,8 +14,7 @@ var puzzle string
 
 func main() {
 	fmt.Println("1:", part1(puzzle, 25))
-	fmt.Println("X:", part2(puzzle, 46))
-	//fmt.Println("2:", part2(puzzle, 75))
+	fmt.Println("2:", part2(puzzle, 75))
 }
 
 func parse(input string) []int64 {
@@ -78,46 +77,51 @@ func singleBlink(stone int64) (int64, int64) {
 	if digits > 1 && digits%2 == 0 {
 		splitPower := powerOf10[digits/2]
 
-		lhs := stone / splitPower
-		rhs := stone % splitPower
+		left := stone / splitPower
+		right := stone % splitPower
 
-		return lhs, rhs
+		return left, right
 	}
 
-	return stone * 2024, -1
+	next := stone * 2024
+	return next, -1
 }
 
-type CacheEntry struct {
-	left, right int64
+type CacheKey struct {
+	stone int64
+	depth int
 }
 
-func countStones(stone int64, depth int, cache *map[int64]CacheEntry) int {
-	var left, right int64
-	if cached, ok := (*cache)[stone]; ok {
-		left, right = cached.left, cached.right
-	} else {
-		left, right = singleBlink(stone)
+func countStones(stone int64, depth int, countCache *map[CacheKey]int) int {
+	key := CacheKey{stone, depth}
+
+	if cached, ok := (*countCache)[key]; ok {
+		return cached
 	}
+
+	left, right := singleBlink(stone)
 
 	if depth == 1 {
 		if right >= 0 {
+			(*countCache)[key] = 2
 			return 2
 		}
+		(*countCache)[key] = 1
 		return 1
 	}
 
-	count := countStones(left, depth-1, cache)
+	count := countStones(left, depth-1, countCache)
 	if right >= 0 {
-		count += countStones(right, depth-1, cache)
+		count += countStones(right, depth-1, countCache)
 	}
+	(*countCache)[key] = count
 	return count
 }
 
 func part1(input string, blinks int) int {
 	stones := parse(input)
 
-	for i := range blinks {
-		fmt.Println(i + 1)
+	for range blinks {
 		stones = blink(stones)
 	}
 	return len(stones)
@@ -127,9 +131,10 @@ func part2(input string, blinks int) int {
 	stones := parse(input)
 
 	sum := 0
-	cache := make(map[int64]CacheEntry)
-	for i, stone := range stones {
-		fmt.Println(i)
+
+	cache := make(map[CacheKey]int)
+
+	for _, stone := range stones {
 		sum += countStones(stone, blinks, &cache)
 	}
 	return sum
