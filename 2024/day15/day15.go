@@ -5,47 +5,25 @@ import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/albertb/advent-of-code/mathy"
 )
-
-type Vec struct {
-	x, y int
-}
-
-func (v Vec) plus(other Vec) Vec {
-	return Vec{
-		v.x + other.x,
-		v.y + other.y,
-	}
-}
-
-func (v *Vec) add(other Vec) {
-	tmp := v.plus(other)
-	v.x, v.y = tmp.x, tmp.y
-}
-
-func (v Vec) equal(other Vec) bool {
-	return v.x == other.x && v.y == other.y
-}
 
 type World struct {
-	robot  Vec
-	boxes  []Vec
-	walls  []Vec
-	bounds Vec
+	robot  mathy.Rect
+	boxes  []mathy.Rect
+	walls  []mathy.Rect
+	bounds mathy.Vec
 }
 
-type Move int
-
-const (
-	Up = iota
-	Right
-	Down
-	Left
-)
-
-func parse(input string) (World, []Move) {
+func parse(input string, wide bool) (World, []mathy.Vec) {
 	var world World
-	var moves []Move
+	var moves []mathy.Vec
+
+	width := 0
+	if wide {
+		width = 1
+	}
 
 	y := 0
 	for line := range strings.SplitSeq(input, "\n") {
@@ -54,27 +32,28 @@ func parse(input string) (World, []Move) {
 		}
 
 		if strings.HasPrefix(line, "#") {
-			world.bounds.x = len(line)
+			world.bounds.X = len(line)
 
 			// We're looking at the world.
-			for x, rune := range line {
+			x := 0
+			for _, rune := range line {
 				switch rune {
 				case '#':
-					world.walls = append(world.walls, Vec{x, y})
+					world.walls = append(world.walls, mathy.Rect{Vec: mathy.Vec{X: x, Y: y}, Width: width, Height: 0})
 				case '.':
-					continue // This is empty space.
+					// This is empty space. Ignore.
 				case 'O':
 					// This is a box.
-					world.boxes = append(world.boxes, Vec{x, y})
+					world.boxes = append(world.boxes, mathy.Rect{Vec: mathy.Vec{X: x, Y: y}, Width: width, Height: 0})
 				case '@':
-					if world.robot.x != 0 {
+					if world.robot.X != 0 {
 						log.Fatalln("unexpected robot at", x, y)
 					}
-					world.robot = Vec{x, y}
+					world.robot = mathy.Rect{Vec: mathy.Vec{X: x, Y: y}, Width: 0, Height: 0}
 				default:
 					log.Fatalln("unexpected world tile:", rune)
 				}
-
+				x += 1 + width
 			}
 			y++
 		} else {
@@ -82,13 +61,13 @@ func parse(input string) (World, []Move) {
 			for _, direction := range line {
 				switch direction {
 				case '^':
-					moves = append(moves, Up)
+					moves = append(moves, mathy.Vec{X: 0, Y: -1})
 				case '>':
-					moves = append(moves, Right)
+					moves = append(moves, mathy.Vec{X: 1, Y: 0})
 				case 'v':
-					moves = append(moves, Down)
+					moves = append(moves, mathy.Vec{X: 0, Y: 1})
 				case '<':
-					moves = append(moves, Left)
+					moves = append(moves, mathy.Vec{X: -1, Y: 0})
 				default:
 					log.Fatalf("unexpected move: `%c` in `%s`\n", direction, line)
 				}
@@ -96,48 +75,32 @@ func parse(input string) (World, []Move) {
 			}
 		}
 	}
-	world.bounds.y = y
+	world.bounds.Y = y
 
 	return world, moves
 }
 
-func (m Move) toVec() Vec {
-	switch m {
-	case Up:
-		return Vec{0, -1}
-	case Right:
-		return Vec{1, 0}
-	case Down:
-		return Vec{0, 1}
-	case Left:
-		return Vec{-1, 0}
-	}
-	log.Fatalln("unexpected move:", m)
-	return Vec{}
-}
-
-func (w World) isWall(pos Vec) bool {
+func (w World) isWall(pos mathy.Rect) bool {
 	for _, wall := range w.walls {
-		if pos.equal(wall) {
+		if wall.Intersects(pos) {
 			return true
 		}
 	}
 	return false
 }
 
-func (w *World) getBox(pos Vec) *Vec {
+func (w *World) getBox(pos mathy.Rect) *mathy.Rect {
 	for i := range w.boxes {
 		box := &w.boxes[i]
-		if pos.equal(*box) {
+		if box.Intersects(pos) {
 			return box
 		}
 	}
 	return nil
 }
 
-func (w *World) apply(m Move) {
-	vec := m.toVec()
-	next := w.robot.plus(vec)
+func (w *World) apply(vec mathy.Vec) {
+	next := mathy.Rect{Vec: w.robot.Plus(vec), Width: 0, Height: 0}
 
 	if w.isWall(next) {
 		// We can't move.
@@ -148,10 +111,10 @@ func (w *World) apply(m Move) {
 	if box != nil {
 		// There's a box in the way, see if we can move it.
 		blocked := true
-		boxesToMove := []*Vec{box}
+		boxesToMove := []*mathy.Rect{box}
 		nextBox := next
 		for {
-			nextBox = nextBox.plus(vec)
+			nextBox = mathy.Rect{Vec: nextBox.Plus(vec), Width: 0, Height: 0}
 			if w.isWall(nextBox) {
 				// We can't move the boxes, give up.
 				break
@@ -171,23 +134,23 @@ func (w *World) apply(m Move) {
 		}
 
 		for i := range boxesToMove {
-			boxesToMove[i].add(vec)
+			boxesToMove[i].Add(vec)
 		}
 	}
 
 	// We're free to move to the next tile.
-	w.robot.add(vec)
+	w.robot.Add(vec)
 }
 
 func part1(input string) int {
-	world, moves := parse(input)
+	world, moves := parse(input, false)
 	for _, move := range moves {
 		world.apply(move)
 	}
 
 	sum := 0
 	for _, box := range world.boxes {
-		sum += box.x + box.y*100
+		sum += box.X + box.Y*100
 	}
 	return sum
 }
