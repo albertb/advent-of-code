@@ -21,6 +21,16 @@ func (v *Vec) Add(other Vec) {
 	v.X, v.Y = tmp.X, tmp.Y
 }
 
+func (r Rect) Translate(v Vec) Rect {
+	return Rect{
+		Vec{
+			r.X + v.X,
+			r.Y + v.Y,
+		},
+		r.Width,
+		r.Height}
+}
+
 func (r Rect) Intersects(other Rect) bool {
 	return r.X <= other.X+other.Width &&
 		other.X <= r.X+r.Width &&

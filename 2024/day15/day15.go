@@ -16,6 +16,42 @@ type World struct {
 	bounds mathy.Vec
 }
 
+func (w World) debug(desc string) {
+	runes := make([][]rune, w.bounds.Y)
+	for y := range w.bounds.Y {
+		runes[y] = make([]rune, w.bounds.X)
+		for x := range w.bounds.X {
+			runes[y][x] = '.'
+		}
+	}
+
+	for _, wall := range w.walls {
+		runes[wall.Y][wall.X] = '#'
+		if wall.Width > 0 {
+			runes[wall.Y][wall.X+1] = '#'
+		}
+	}
+
+	for _, box := range w.boxes {
+		if box.Width > 0 {
+			runes[box.Y][box.X] = '['
+			runes[box.Y][box.X+1] = ']'
+		} else {
+			runes[box.Y][box.X] = 'O'
+		}
+	}
+
+	runes[w.robot.Y][w.robot.X] = '@'
+
+	fmt.Println(desc)
+	for _, line := range runes {
+		for _, r := range line {
+			fmt.Print(string(r))
+		}
+		fmt.Println()
+	}
+}
+
 func parse(input string, wide bool) (World, []mathy.Vec) {
 	var world World
 	var moves []mathy.Vec
@@ -32,11 +68,14 @@ func parse(input string, wide bool) (World, []mathy.Vec) {
 		}
 
 		if strings.HasPrefix(line, "#") {
-			world.bounds.X = len(line)
-
 			// We're looking at the world.
 			x := 0
 			for _, rune := range line {
+				maxX := x + 1 + width
+				if maxX > world.bounds.X {
+					world.bounds.X = maxX
+				}
+
 				switch rune {
 				case '#':
 					world.walls = append(world.walls, mathy.Rect{Vec: mathy.Vec{X: x, Y: y}, Width: width, Height: 0})
@@ -80,7 +119,7 @@ func parse(input string, wide bool) (World, []mathy.Vec) {
 	return world, moves
 }
 
-func (w World) isWall(pos mathy.Rect) bool {
+func (w World) intersectsWall(pos mathy.Rect) bool {
 	for _, wall := range w.walls {
 		if wall.Intersects(pos) {
 			return true
@@ -89,52 +128,77 @@ func (w World) isWall(pos mathy.Rect) bool {
 	return false
 }
 
-func (w *World) getBox(pos mathy.Rect) *mathy.Rect {
+func (w *World) intersectingBoxes(pos mathy.Rect) []*mathy.Rect {
+	var boxes []*mathy.Rect
 	for i := range w.boxes {
 		box := &w.boxes[i]
 		if box.Intersects(pos) {
-			return box
+			boxes = append(boxes, box)
 		}
 	}
-	return nil
+	return boxes
 }
 
 func (w *World) apply(vec mathy.Vec) {
 	next := mathy.Rect{Vec: w.robot.Plus(vec), Width: 0, Height: 0}
 
-	if w.isWall(next) {
+	if w.intersectsWall(next) {
 		// We can't move.
 		return
 	}
 
-	box := w.getBox(next)
-	if box != nil {
-		// There's a box in the way, see if we can move it.
+	if boxes := w.intersectingBoxes(next); boxes != nil {
+		// There's boxes in the way, see if we can move them.
 		blocked := true
-		boxesToMove := []*mathy.Rect{box}
-		nextBox := next
+
+		boxesToCheck := []*mathy.Rect{}
+		boxesToCheck = append(boxesToCheck, boxes...)
+
+		boxesToMove := map[*mathy.Rect]struct{}{}
+
+		i := 0
 		for {
-			nextBox = mathy.Rect{Vec: nextBox.Plus(vec), Width: 0, Height: 0}
-			if w.isWall(nextBox) {
+			if i >= len(boxesToCheck) {
+				// We found some free space!
+				blocked = false
+				break
+			}
+
+			box := boxesToCheck[i]
+			i++
+
+			boxesToMove[box] = struct{}{}
+
+			tile := box.Translate(vec)
+
+			if w.intersectsWall(tile) {
 				// We can't move the boxes, give up.
 				break
 			}
-			if box = w.getBox(nextBox); box != nil {
-				// We found another box, keep going.
-				boxesToMove = append(boxesToMove, box)
-				continue
+
+			if boxes = w.intersectingBoxes(tile); boxes != nil {
+				for _, b := range boxes {
+					// We don't care if we intersect with ourselves.
+					if b == box {
+						continue
+					}
+					for _, seen := range boxesToCheck {
+						if b == seen {
+							continue
+						}
+					}
+					// We found another box, queue it up.
+					boxesToCheck = append(boxesToCheck, b)
+				}
 			}
-			// We found a free space for the box!
-			blocked = false
-			break
 		}
 
 		if blocked {
 			return
 		}
 
-		for i := range boxesToMove {
-			boxesToMove[i].Add(vec)
+		for box := range boxesToMove {
+			box.Add(vec)
 		}
 	}
 
@@ -155,9 +219,52 @@ func part1(input string) int {
 	return sum
 }
 
+func part2(input string) int {
+	world, moves := parse(input, true)
+
+	for _, move := range moves {
+		world.apply(move)
+	}
+
+	sum := 0
+	for _, box := range world.boxes {
+		sum += box.X + box.Y*100
+	}
+	return sum
+}
+
+func manual(input string) {
+	world, _ := parse(input, true)
+
+	world.debug("INITIAL STATE")
+
+	for {
+		move := mathy.Vec{}
+
+		var key string
+		fmt.Print("Direction?")
+		fmt.Scanf("%s", &key)
+		switch key {
+		case ".":
+			move.Y = -1
+		case "e":
+			move.Y = 1
+		case "o":
+			move.X = -1
+		case "u":
+			move.X = 1
+		}
+
+		world.apply(move)
+		world.debug("NEW STATE")
+	}
+}
+
 //go:embed puzzle.txt
 var puzzle string
 
 func main() {
 	fmt.Println("1:", part1(puzzle))
+	fmt.Println("2:", part2(puzzle))
+	//manual(puzzle)
 }
