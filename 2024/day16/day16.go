@@ -120,7 +120,7 @@ func (h *AstarHeap) Pop() any {
 
 // Return the mincost, and all the paths that yield this cost.
 func cost(r Reindeer, m Maze) (int, []*Node) {
-	nm := map[Reindeer]*Node{}
+	nm := map[Reindeer][]*Node{}
 	pq := &AstarHeap{}
 	heap.Init(pq)
 
@@ -139,37 +139,10 @@ func cost(r Reindeer, m Maze) (int, []*Node) {
 		current := heap.Pop(pq).(*Node)
 
 		if current.r.pos.Equals(m.end) {
-			fmt.Println("PATH FOUND")
-
-			tiles := map[mathy.Vec]struct{}{}
-			path := current
-			i := 1
-			for {
-				if path == nil {
-					break
-				}
-				tiles[path.r.pos] = struct{}{}
-				path = path.parent
-				i++
-			}
-			fmt.Println("LEN", i)
-
-			for y := range m.grid {
-				for x := range m.grid[y] {
-					if _, ok := tiles[mathy.Vec{x, y}]; ok {
-						fmt.Print("O")
-					} else {
-						fmt.Print(".")
-					}
-				}
-				fmt.Println()
-			}
-
 			if current.cost < mincost {
 				mincost = current.cost
 				paths = paths[:0]
 			}
-
 			// We reached the end!
 			paths = append(paths, current)
 		}
@@ -187,7 +160,7 @@ func cost(r Reindeer, m Maze) (int, []*Node) {
 
 		if m.grid[forward.pos.Y][forward.pos.X] == Free {
 			cost := 1 + current.cost
-			forwardNode, ok := nm[forward]
+			forwardNodes, ok := nm[forward]
 			if !ok {
 				node := Node{
 					r:      forward,
@@ -195,13 +168,29 @@ func cost(r Reindeer, m Maze) (int, []*Node) {
 					rank:   cost + heuristic(forward, m),
 					parent: current,
 				}
-				nm[forward] = &node
+				nm[forward] = []*Node{&node}
 				heap.Push(pq, &node)
-			} else if cost < forwardNode.cost {
-				forwardNode.cost = cost
-				forwardNode.rank = cost + heuristic(forward, m)
-				forwardNode.parent = current
-				heap.Push(pq, forwardNode)
+			} else {
+				// If the cost is less, update it, and clear our extra (more expensive) nodes if any.
+				if cost < forwardNodes[0].cost {
+					forwardNodes[0].cost = cost
+					forwardNodes[0].rank = cost + heuristic(forward, m)
+					forwardNodes[0].parent = current
+					nm[forward] = []*Node{forwardNodes[0]}
+					heap.Push(pq, forwardNodes[0])
+				}
+
+				// If the cost is the same, append this node.
+				if cost == forwardNodes[0].cost {
+					forwardNode := Node{
+						r:      forward,
+						cost:   cost,
+						rank:   cost + heuristic(forward, m),
+						parent: current,
+					}
+					nm[forward] = append(nm[forward], &forwardNode)
+					heap.Push(pq, &forwardNode)
+				}
 			}
 		}
 
@@ -213,7 +202,7 @@ func cost(r Reindeer, m Maze) (int, []*Node) {
 			}
 
 			cost := 1000 + current.cost
-			rotatedNode, ok := nm[rotated]
+			rotatedNodes, ok := nm[rotated]
 			if !ok {
 				node := Node{
 					r:      rotated,
@@ -221,13 +210,28 @@ func cost(r Reindeer, m Maze) (int, []*Node) {
 					rank:   cost + heuristic(rotated, m),
 					parent: current,
 				}
-				nm[rotated] = &node
+				nm[rotated] = []*Node{&node}
 				heap.Push(pq, &node)
-			} else if cost < rotatedNode.cost {
-				rotatedNode.cost = cost
-				rotatedNode.rank = cost + heuristic(rotated, m)
-				rotatedNode.parent = current
-				heap.Push(pq, rotatedNode)
+			} else {
+				if cost < rotatedNodes[0].cost {
+					rotatedNodes[0].cost = cost
+					rotatedNodes[0].rank = cost + heuristic(rotated, m)
+					rotatedNodes[0].parent = current
+
+					nm[rotated] = []*Node{rotatedNodes[0]}
+					heap.Push(pq, rotatedNodes[0])
+				}
+
+				if cost == rotatedNodes[0].cost {
+					rotatedNode := Node{
+						r:      rotated,
+						cost:   cost,
+						rank:   cost + heuristic(rotated, m),
+						parent: current,
+					}
+					nm[rotated] = append(nm[rotated], &rotatedNode)
+					heap.Push(pq, &rotatedNode)
+				}
 			}
 		}
 	}
@@ -256,7 +260,6 @@ func part2(input string) int {
 	}
 
 	_, paths := cost(r, maze)
-	fmt.Println("PATH COUNT", len(paths))
 
 	tiles := map[mathy.Vec]struct{}{}
 	for _, path := range paths {
@@ -272,18 +275,6 @@ func part2(input string) int {
 		fmt.Println("PATH LEN", i)
 	}
 
-	/*fmt.Println("FINAL")
-	for y := range maze.grid {
-		for x := range maze.grid[y] {
-			if _, ok := tiles[mathy.Vec{x, y}]; ok {
-				fmt.Print("O")
-			} else {
-				fmt.Print(".")
-			}
-		}
-		fmt.Println()
-	}*/
-
 	return len(tiles)
 }
 
@@ -292,4 +283,5 @@ var puzzle string
 
 func main() {
 	fmt.Println("1:", part1(puzzle))
+	fmt.Println("2:", part2(puzzle))
 }
