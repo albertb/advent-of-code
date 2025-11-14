@@ -16,6 +16,34 @@ func (v Vec) Plus(other Vec) Vec {
 	}
 }
 
+func (v Vec) Equals(other Vec) bool {
+	return v.X == other.X && v.Y == other.Y
+}
+
+// Returns [v] rotated 90 degress clockwise [n] times.
+func (v Vec) Rotate90(n int) Vec {
+	if n < 0 {
+		n = (n%4 + 4) % 4
+	}
+
+	for range n {
+		v = Vec{
+			-v.Y,
+			v.X,
+		}
+	}
+
+	return v
+}
+
+func (v Vec) Dot(other Vec) int {
+	return v.X*other.X + v.Y*other.Y
+}
+
+func (v Vec) Cross(other Vec) int {
+	return v.X*other.Y - v.Y*other.X
+}
+
 func (v *Vec) Add(other Vec) {
 	tmp := v.Plus(other)
 	v.X, v.Y = tmp.X, tmp.Y
