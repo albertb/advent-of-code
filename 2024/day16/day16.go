@@ -118,10 +118,14 @@ func (h *AstarHeap) Pop() any {
 	return x
 }
 
-func cost(r Reindeer, m Maze) int {
+// Return the mincost, and all the paths that yield this cost.
+func cost(r Reindeer, m Maze) (int, []*Node) {
 	nm := map[Reindeer]*Node{}
 	pq := &AstarHeap{}
 	heap.Init(pq)
+
+	mincost := math.MaxInt
+	paths := []*Node{}
 
 	node := Node{
 		r:      r,
@@ -135,16 +139,44 @@ func cost(r Reindeer, m Maze) int {
 		current := heap.Pop(pq).(*Node)
 
 		if current.r.pos.Equals(m.end) {
-			node := current
+			fmt.Println("PATH FOUND")
+
+			tiles := map[mathy.Vec]struct{}{}
+			path := current
+			i := 1
 			for {
-				if node == nil {
+				if path == nil {
 					break
 				}
-				node = node.parent
+				tiles[path.r.pos] = struct{}{}
+				path = path.parent
+				i++
+			}
+			fmt.Println("LEN", i)
+
+			for y := range m.grid {
+				for x := range m.grid[y] {
+					if _, ok := tiles[mathy.Vec{x, y}]; ok {
+						fmt.Print("O")
+					} else {
+						fmt.Print(".")
+					}
+				}
+				fmt.Println()
+			}
+
+			if current.cost < mincost {
+				mincost = current.cost
+				paths = paths[:0]
 			}
 
 			// We reached the end!
-			return current.cost
+			paths = append(paths, current)
+		}
+
+		if current.cost > mincost {
+			// Give up on this branch, it cannot beat the mincost.
+			continue
 		}
 
 		// Try to see if the reindeer can just walk forward, whatever way it's pointing.
@@ -200,8 +232,7 @@ func cost(r Reindeer, m Maze) int {
 		}
 	}
 
-	// No path found.
-	return math.MaxInt
+	return mincost, paths
 }
 
 func part1(input string) int {
@@ -212,7 +243,48 @@ func part1(input string) int {
 		dir: mathy.Vec{X: 1, Y: 0},
 	}
 
-	return cost(r, maze)
+	cost, _ := cost(r, maze)
+	return cost
+}
+
+func part2(input string) int {
+	maze := parse(input)
+
+	r := Reindeer{
+		pos: maze.start,
+		dir: mathy.Vec{X: 1, Y: 0},
+	}
+
+	_, paths := cost(r, maze)
+	fmt.Println("PATH COUNT", len(paths))
+
+	tiles := map[mathy.Vec]struct{}{}
+	for _, path := range paths {
+		i := 1
+		for {
+			if path == nil {
+				break
+			}
+			tiles[path.r.pos] = struct{}{}
+			path = path.parent
+			i++
+		}
+		fmt.Println("PATH LEN", i)
+	}
+
+	/*fmt.Println("FINAL")
+	for y := range maze.grid {
+		for x := range maze.grid[y] {
+			if _, ok := tiles[mathy.Vec{x, y}]; ok {
+				fmt.Print("O")
+			} else {
+				fmt.Print(".")
+			}
+		}
+		fmt.Println()
+	}*/
+
+	return len(tiles)
 }
 
 //go:embed puzzle.txt
