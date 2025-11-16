@@ -4,6 +4,10 @@ type Vec struct {
 	X, Y int
 }
 
+func NewVec(x, y int) Vec {
+	return Vec{x, y}
+}
+
 type Rect struct {
 	Vec
 	Width, Height int
