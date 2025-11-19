@@ -1,0 +1,16 @@
+2 -> 9
+
+
+    v<<A>>^AA . v<A>A^A
+    
+
+^^> = 
+  <AA . v>A =
+    v<<A>>^AA . <vA>A^A
+
+  <AA . >vA =
+    v<<A>>^AA . vA<A
+
+^>^ = <A>vA^<A
+
+>^^ = vA^<<AA

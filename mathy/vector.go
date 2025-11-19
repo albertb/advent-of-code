@@ -24,6 +24,17 @@ func (v Vec) Plus(other Vec) Vec {
 	}
 }
 
+func (v Vec) Minus(other Vec) Vec {
+	return Vec{
+		v.X - other.X,
+		v.Y - other.Y,
+	}
+}
+
+func (v Vec) Distance(other Vec) int {
+	return Abs(v.X-other.X) + Abs(v.Y-other.Y)
+}
+
 func (v Vec) Equals(other Vec) bool {
 	return v.X == other.X && v.Y == other.Y
 }
