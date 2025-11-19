@@ -8,8 +8,8 @@ func NewVec(x, y int) Vec {
 	return Vec{x, y}
 }
 
-func RightLeftUpDown() []Vec {
-	return []Vec{Vec{1, 0}, Vec{-1, 0}, Vec{0, 1}, Vec{0, -1}}
+func Cardinals() []Vec {
+	return []Vec{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
 }
 
 type Rect struct {
