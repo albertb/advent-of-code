@@ -9,7 +9,7 @@ func NewVec(x, y int) Vec {
 }
 
 func Cardinals() []Vec {
-	return []Vec{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
+	return []Vec{{-1, 0}, {0, 1}, {0, -1}, {1, 0}}
 }
 
 type Rect struct {

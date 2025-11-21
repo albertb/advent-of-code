@@ -1,26 +1,72 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
+
+func Test_PadPaths(t *testing.T) {
+
+	numPad := newKeypad()
+	numKeys := []string{"A", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
+
+	fmt.Print("   ")
+	for _, from := range numKeys {
+		fmt.Printf("%8s", from)
+	}
+	fmt.Println()
+
+	for _, from := range numKeys {
+		fmt.Printf("%s: ", from)
+		for _, to := range numKeys {
+			fmt.Printf("%8s", numPad.paths[Path{from, to}])
+		}
+		fmt.Println()
+	}
+
+	dirPad := newDirectionPad()
+	dirKeys := []string{"A", "^", "<", "v", ">"}
+
+	fmt.Print("   ")
+	for _, from := range dirKeys {
+		fmt.Printf("%6s", from)
+	}
+	fmt.Println()
+
+	for _, from := range dirKeys {
+		fmt.Printf("%s: ", from)
+		for _, to := range dirKeys {
+			fmt.Printf("%6s", dirPad.paths[Path{from, to}])
+		}
+		fmt.Println()
+	}
+}
 
 func Test_FirstDirectionPad(t *testing.T) {
 	keypad := newKeypad()
-	keypadMoves := enter(keypad, []rune("0"))
+	numSeq := sequences("0", keypad)
 
-	directionPad := newDirectionPad()
-	directionPadMoves := enter(directionPad, keypadMoves)
+	dirpad := newDirectionPad()
+	dirSeq := sequences(numSeq, dirpad)
 
-	if got, want := string(directionPadMoves), "v<<A>>^A"; got != want {
+	if got, want := string(dirSeq), "v<<A>>^A"; got != want {
 		t.Errorf("moves = %v, want %v", got, want)
 	}
 }
 
-func Test_PreferRight(t *testing.T) {
-	directionPad := newDirectionPad()
-	directionPad1Moves := enter(directionPad, []rune("^^>"))
-	directionPad2Moves := enter(directionPad, directionPad1Moves)
+func Test_379(t *testing.T) {
+	keypad := newKeypad()
+	dirpad := newDirectionPad()
 
-	if got, want := string(directionPad2Moves), "v<<A>>^AAvA<A"; got != want {
-		t.Errorf("moves = %v, want %v", got, want)
+	code := "379A"
+	numSeq := sequences(code, keypad)
+	dir1Seq := sequences(numSeq, dirpad)
+	dir2Seq := sequences(dir1Seq, dirpad)
+
+	fmt.Printf("code: %s\nnum: %s\ndir1: %s\ndir2: %s\n", code, numSeq, dir1Seq, dir2Seq)
+
+	if got, want := len(dir2Seq), 64; got != want {
+		t.Errorf("len = %v, want %v", got, want)
 	}
 }
 
