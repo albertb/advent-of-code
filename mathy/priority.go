@@ -3,6 +3,7 @@ package mathy
 type PriorityItem[T comparable] struct {
 	Value    T
 	Priority int
+	Parent   *PriorityItem[T]
 	index    int
 }
 
