@@ -5,20 +5,24 @@ import (
 	"fmt"
 	"log"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/albertb/advent-of-code/mathy"
 )
 
+type Path struct {
+	from, to string
+}
+
 type Pad struct {
 	buttons map[rune]mathy.Vec
 	gaps    map[mathy.Vec]struct{}
 	bounds  mathy.Vec
+	paths   map[Path]string
 }
 
 func newKeypad() Pad {
-	return Pad{
+	pad := Pad{
 		buttons: map[rune]mathy.Vec{
 			'7': {X: 0, Y: 0}, '8': {X: 1, Y: 0}, '9': {X: 2, Y: 0},
 			'4': {X: 0, Y: 1}, '5': {X: 1, Y: 1}, '6': {X: 2, Y: 1},
@@ -30,10 +34,13 @@ func newKeypad() Pad {
 		},
 		bounds: mathy.Vec{X: 2, Y: 3},
 	}
+	pad.paths = mapBestPaths(pad)
+
+	return pad
 }
 
 func newDirectionPad() Pad {
-	return Pad{
+	pad := Pad{
 		buttons: map[rune]mathy.Vec{
 			/*      GAP     */ '^': {X: 1, Y: 0}, 'A': {X: 2, Y: 0},
 			'<': {X: 0, Y: 1}, 'v': {X: 1, Y: 1}, '>': {X: 2, Y: 1},
@@ -43,16 +50,37 @@ func newDirectionPad() Pad {
 		},
 		bounds: mathy.Vec{X: 2, Y: 1},
 	}
+	pad.paths = mapBestPaths(pad)
+	return pad
 }
 
-func shortestPath(pad Pad, from, to mathy.Vec) []rune {
+func mapBestPaths(pad Pad) map[Path]string {
+	result := make(map[Path]string)
+	for fromLabel, fromWhere := range pad.buttons {
+		for toLabel, toWhere := range pad.buttons {
+			if fromWhere.Equals(toWhere) {
+				continue
+			}
+			if fromLabel == 'A' && toLabel == '<' {
+				fmt.Println("aaa")
+			}
+			path := bestPath(pad, fromWhere, toWhere) + "A"
+			result[Path{string(fromLabel), string(toLabel)}] = path
+		}
+	}
+	return result
+}
+
+func bestPath(pad Pad, from, to mathy.Vec) string {
 	type AstarNode struct {
 		where  mathy.Vec
 		cost   int
 		parent *AstarNode
 	}
 
-	nm := map[mathy.Vec]*mathy.PriorityItem[AstarNode]{}
+	// Keep track of the min-cost at each location.
+	nm := map[mathy.Vec]int{from: 0}
+
 	pq := &mathy.PriorityQueue[AstarNode]{}
 	heap.Init(pq)
 
@@ -63,29 +91,27 @@ func shortestPath(pad Pad, from, to mathy.Vec) []rune {
 
 	item := mathy.PriorityItem[AstarNode]{
 		Value: AstarNode{
-			where:  from,
-			cost:   0,
-			parent: nil,
+			where: from,
+			cost:  0,
 		},
+		Parent:   nil,
 		Priority: h(from, to),
 	}
-	nm[from] = &item
 	heap.Push(pq, &item)
 
-	var path *AstarNode
+	var shortest *mathy.PriorityItem[AstarNode]
 	for pq.Len() > 0 {
 		current := heap.Pop(pq).(*mathy.PriorityItem[AstarNode])
 
-		if current.Value.where.Equals(to) {
-			path = &current.Value
-			break
+		var discounted *mathy.Vec
+		if current.Parent != nil {
+			diff := current.Value.where.Minus(current.Parent.Value.where)
+			discounted = &diff
 		}
 
-		var ahead *mathy.Vec
-		if parent := current.Value.parent; parent != nil {
-			// Discount moves that don't require turns.
-			temp := current.Value.where.Minus(parent.where)
-			ahead = &temp
+		if current.Value.where.Equals(to) {
+			shortest = current
+			break
 		}
 
 		for _, diff := range mathy.Cardinals() {
@@ -101,85 +127,81 @@ func shortestPath(pad Pad, from, to mathy.Vec) []rune {
 
 			cost := 1 + current.Value.cost
 
-			if ahead != nil && !diff.Equals(*ahead) {
-				// Penalize turns.
-				cost += 10000
+			if discounted != nil && !discounted.Equals(diff) {
+				cost += 1000
 			}
 
-			if node, ok := nm[next]; !ok {
+			if minCost, ok := nm[next]; !ok || minCost >= cost {
+				nm[next] = cost
+
 				node := mathy.PriorityItem[AstarNode]{
 					Value: AstarNode{
-						where:  next,
-						cost:   cost,
-						parent: &current.Value,
+						where: next,
+						cost:  cost,
 					},
+					Parent:   current,
 					Priority: cost + h(next, to),
 				}
-				nm[next] = &node
 				heap.Push(pq, &node)
-			} else if cost <= node.Value.cost {
-				node.Value.cost = cost
-				node.Value.parent = &current.Value
-				node.Priority = cost + h(next, to)
-				heap.Push(pq, node)
 			}
 		}
 	}
 
-	if path == nil {
+	if shortest == nil {
 		log.Fatalln("failed to find a path from", from, "to", to)
 	}
 
-	runes := []rune{}
-
-	current := path
-	previous := path.parent
+	sequence := []rune{}
+	current := shortest
+	previous := current.Parent
 	for previous != nil {
-		diff := current.where.Minus(previous.where)
+		diff := current.Value.where.Minus(previous.Value.where)
 		if diff.X > 0 {
-			runes = append(runes, '>')
+			sequence = append(sequence, '>')
 		} else if diff.X < 0 {
-			runes = append(runes, '<')
+			sequence = append(sequence, '<')
 		} else if diff.Y > 0 {
-			runes = append(runes, 'v')
+			sequence = append(sequence, 'v')
 		} else if diff.Y < 0 {
-			runes = append(runes, '^')
+			sequence = append(sequence, '^')
 		}
-		current, previous = previous, current.parent
+		current, previous = previous, current.Parent
 	}
-	slices.Reverse(runes)
+	slices.Reverse(sequence)
 
-	return runes
+	return string(sequence)
 }
 
-func enter(pad Pad, keys []rune) []rune {
-	var presses []rune
-
-	from := pad.buttons['A']
-	for _, key := range keys {
-		to := pad.buttons[key]
-		moves := shortestPath(pad, from, to)
-		presses = append(presses, moves...)
-		presses = append(presses, 'A')
-		from = to
+func sequences(sequence string, pad Pad) string {
+	var keys string
+	previous := "A"
+	for _, key := range sequence {
+		next := string(key)
+		keys += pad.paths[Path{previous, next}]
+		previous = next
 	}
-
-	return presses
+	return keys
 }
 
-func sequence(keys string) string {
-	//fmt.Println("code:", keys)
-	keypad := newKeypad()
-	keypadMoves := enter(keypad, []rune(keys))
-	//fmt.Println("keys:", string(keypadMoves))
-	directionPad := newDirectionPad()
-	directionPad1Moves := enter(directionPad, keypadMoves)
-	//fmt.Println("pad1:", string(directionPad1Moves))
-	directionPad2Moves := enter(directionPad, directionPad1Moves)
-	//fmt.Println("pad2:", string(directionPad2Moves))
-	//fmt.Println("---")
+func part1(input string) int {
+	code := "029A"
+	fmt.Println("code:", code)
 
-	return string(directionPad2Moves)
+	keyPad := newKeypad()
+	dirPad := newDirectionPad()
+
+	fmt.Println("[A to <]:", dirPad.paths[Path{"A", "<"}])
+
+	keySeq := sequences(code, keyPad)
+	fmt.Println("keypad:", keySeq)
+
+	dir1Seq := sequences(keySeq, dirPad)
+	fmt.Println("dirpad:", dir1Seq)
+
+	dir2Seq := sequences(dir1Seq, dirPad)
+	fmt.Println("dirpad:", dir2Seq)
+
+	return 0
 }
 
 func parse(input string) []string {
@@ -193,35 +215,13 @@ func parse(input string) []string {
 	return result
 }
 
-func part1(input string) int {
-	codes := parse(input)
-
-	sum := 0
-	for _, code := range codes {
-		moves := sequence(code)
-		number, err := strconv.ParseInt(code[0:len(code)-1], 10, 64)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		sum += len(moves) * int(number)
-	}
-	return sum
-}
-
-/* TODO
-   - Generate all the shortest paths p0 from each pair of key on keypad
-   - For each p0, generate all the shortest paths p1 from each pair of key on the direction pad
-   - For each p1, generate all the shortest paths p2 from each pair of key on the direction pad
-   - Select p2
-*/
-
-func main() {
-	var puzzle = `
+var puzzle = `
 803A
 528A
 586A
 341A
 319A`
 
-	fmt.Println("1:", part1(puzzle))
+func main() {
+	fmt.Println("Part 1:", part1(puzzle))
 }
