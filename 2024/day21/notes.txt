@@ -1,16 +1,31 @@
-2 -> 9
+code: 379A
+
+num: ^ A ^ ^ < < A > > A v v v A
+
+dir1: <    A      >  A  <    AA    v   <  AA    >>  ^    A v   AA   ^  A  <    v  AAA   ^  >   A
+
+dir2: v<<A >>^A   vA ^A v<<A >>^AA <vA <A >>^AA vAA ^<A >A <vA ^>AA <A >A v<<A >A ^>AAA <A >vA ^A
 
 
-    v<<A>>^AA . v<A>A^A
-    
 
-^^> = 
-  <AA . v>A =
-    v<<A>>^AA . <vA>A^A
 
-  <AA . >vA =
-    v<<A>>^AA . vA<A
 
-^>^ = <A>vA^<A
 
->^^ = vA^<<AA
+379A
+
+
+
+v<<A >>^A vA ^A    v<<A >>^AA <vA <A >>^AA vAA ^<A >A   <vA ^>AA <A >A   v<<A >A ^>AAA <A >vA ^A
+   <    A  >  A       <    AA   v  <    AA  >>   ^  A     v   AA  ^  A      <  v   AAA  ^   >  A
+        ^     A            ^^           <<          A         >>     A             vvv         A
+              3                                     7                9                         A
+
+
+v<<A ^>>A vA ^A    v<A <AA ^>>AA vA ^<A >AA vA ^A       v<A ^>AA <A >A   v<<A >A ^>AAA vA ^<A >A
+   <    A  >  A      v  <<    AA  >   ^  AA  >  A       v     AA  ^  A      <  v   AAA  >   ^  A
+        ^     A               <<         ^^     A           >>       A             vvv         A
+              3                                 7                    9                         A
+
+
+
+              
