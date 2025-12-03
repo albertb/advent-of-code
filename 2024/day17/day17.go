@@ -106,7 +106,7 @@ func (c *Computer) Execute(program []int64) []int64 {
 			if c.verbose {
 				fmt.Println("A = A >> B")
 			}
-			c.A = c.A / mathy.Pow(2, c.Combo(operand))
+			c.A = c.A / mathy.Pow64(2, c.Combo(operand))
 		case Bxl:
 			if c.verbose {
 				fmt.Printf("B = B XOR %b\n", operand)
@@ -139,12 +139,12 @@ func (c *Computer) Execute(program []int64) []int64 {
 			if c.verbose {
 				fmt.Println("B = A >> combo")
 			}
-			c.B = c.A / mathy.Pow(2, c.Combo(operand))
+			c.B = c.A / mathy.Pow64(2, c.Combo(operand))
 		case Cdv:
 			if c.verbose {
 				fmt.Println("C = A >> B")
 			}
-			c.C = c.A / mathy.Pow(2, c.Combo(operand))
+			c.C = c.A / mathy.Pow64(2, c.Combo(operand))
 		}
 		i += 2
 
