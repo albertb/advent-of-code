@@ -4,4 +4,9 @@
         "go": "/home/albertb/.local/share/mise/shims/go",
         "gopls": "/home/albertb/.local/share/mise/shims/gopls"
     }
+    "gopls": {
+        "analyses": {
+            "composites": false
+        }
+    }
 }
