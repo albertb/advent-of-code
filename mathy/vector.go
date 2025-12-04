@@ -63,6 +63,14 @@ func (v Vec) Cross(other Vec) int {
 	return v.X*other.Y - v.Y*other.X
 }
 
+type Bounds struct {
+	Vec
+}
+
+func (b Bounds) Contains(v Vec) bool {
+	return v.X >= 0 && v.X <= b.X && v.Y >= 0 && v.Y <= b.Y
+}
+
 func (v *Vec) Add(other Vec) {
 	tmp := v.Plus(other)
 	v.X, v.Y = tmp.X, tmp.Y
