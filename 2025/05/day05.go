@@ -10,20 +10,20 @@ import (
 	"github.com/albertb/advent-of-code/mathy"
 )
 
-type Range struct {
+type Interval struct {
 	lower, upper int
 }
 
-func (r Range) Contains(v int) bool {
-	return r.lower <= v && v <= r.upper
+func (v Interval) Contains(n int) bool {
+	return v.lower <= n && n <= v.upper
 }
 
-func (r Range) Len() int {
-	return r.upper - r.lower + 1
+func (v Interval) Len() int {
+	return v.upper - v.lower + 1
 }
 
 type Inventory struct {
-	fresh       []Range
+	fresh       []Interval
 	ingredients []int
 }
 
@@ -40,7 +40,7 @@ func parse(input string) Inventory {
 			}
 			lower := mathy.MustParseInt(bounds[0])
 			upper := mathy.MustParseInt(bounds[1])
-			inventory.fresh = append(inventory.fresh, Range{lower, upper})
+			inventory.fresh = append(inventory.fresh, Interval{lower, upper})
 		} else {
 			ingredient := mathy.MustParseInt(line)
 			inventory.ingredients = append(inventory.ingredients, ingredient)
@@ -68,25 +68,26 @@ func part2(input string) int {
 	inv := parse(input)
 
 	// Sort the ranges by their lower bound.
-	slices.SortFunc(inv.fresh, func(a, b Range) int {
+	slices.SortFunc(inv.fresh, func(a, b Interval) int {
 		return cmp.Compare(a.lower, b.lower)
 	})
 
-	rg := inv.fresh[0]
+	// The interval that we're trying to grow by merging.
+	interval := inv.fresh[0]
 
 	count := 0
-	for _, r := range inv.fresh {
-		if r.lower <= rg.upper {
-			// If these ranges overlap, combine them.
-			rg.upper = mathy.Max(rg.upper, r.upper)
+	for _, fresh := range inv.fresh {
+		if fresh.lower <= interval.upper {
+			// If these intervals overlap, combine them.
+			interval.upper = mathy.Max(interval.upper, fresh.upper)
 		} else {
-			// Otherwise, add up this range's length, and continue with the next range.
-			count += rg.Len()
-			rg = r
+			// Otherwise, add up this interval's length, and continue with the next one.
+			count += interval.Len()
+			interval = fresh
 		}
 	}
-	// Add up the last range's length.
-	count += rg.Len()
+	// Add up the last interval's length.
+	count += interval.Len()
 
 	return count
 }
