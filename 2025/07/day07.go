@@ -85,46 +85,6 @@ func part1(input string) int {
 	return len(splits)
 }
 
-func part2old(input string) int {
-	manifold := parse(input)
-
-	visited := map[mathy.Vec]int{}
-	beams := []mathy.Vec{manifold.start}
-
-	for len(beams) > 0 {
-		beam := beams[0]
-		beams = beams[1:]
-
-		visited[beam]++
-
-		down := beam.Plus(mathy.Vec{0, 1})
-		if _, ok := manifold.splitters[down]; ok {
-			// Add the left beam if possible.
-			left := down.Plus(mathy.Vec{-1, 0})
-			if manifold.bounds.Contains(left) {
-				beams = append(beams, left)
-			}
-
-			// Add the right beam if possible.
-			right := down.Plus(mathy.Vec{1, 0})
-			if manifold.bounds.Contains(right) {
-				beams = append(beams, right)
-			}
-
-		} else if manifold.bounds.Contains(down) {
-			// We hit free space, keep going down.
-			beams = append(beams, down)
-		}
-
-	}
-
-	count := 0
-	for x := 0; x <= manifold.bounds.X; x++ {
-		count += visited[mathy.Vec{x, manifold.bounds.Y}]
-	}
-	return count
-}
-
 func part2(input string) int {
 	manifold := parse(input)
 
