@@ -71,6 +71,14 @@ func (b Bounds) Contains(v Vec) bool {
 	return v.X >= 0 && v.X <= b.X && v.Y >= 0 && v.Y <= b.Y
 }
 
+// Grow b as needed in order to bound v.
+func (b *Bounds) Bound(v Vec) {
+	if v.X >= 0 && v.Y >= 0 {
+		b.X = Max(b.X, v.X)
+		b.Y = Max(b.Y, v.Y)
+	}
+}
+
 func (v *Vec) Add(other Vec) {
 	tmp := v.Plus(other)
 	v.X, v.Y = tmp.X, tmp.Y
