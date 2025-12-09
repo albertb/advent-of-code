@@ -1,5 +1,7 @@
 package mathy
 
+import "math"
+
 type Vec struct {
 	X, Y int
 }
@@ -99,4 +101,19 @@ func (r Rect) Intersects(other Rect) bool {
 		other.X <= r.X+r.Width &&
 		r.Y <= other.Y+other.Height &&
 		other.Y <= r.Y+r.Height
+}
+
+type Vec3 struct {
+	X, Y, Z int
+}
+
+func (v Vec3) Equals(other Vec3) bool {
+	return v.X == other.X && v.Y == other.Y && v.Z == other.Z
+}
+
+func (v Vec3) Distance(other Vec3) float64 {
+	dX := other.X - v.X
+	dY := other.Y - v.Y
+	dZ := other.Z - v.Z
+	return math.Sqrt(float64(dX*dX + dY*dY + dZ*dZ))
 }
