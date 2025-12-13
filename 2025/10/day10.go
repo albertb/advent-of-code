@@ -1,5 +1,10 @@
 package main
 
+/*
+	In order for the lpsolve dependency to be loaded correctly, must run with:
+	CGO_CFLAGS="-I/usr/include/lpsolve" go test ./2025/10/...
+*/
+
 import (
 	_ "embed"
 	"fmt"
