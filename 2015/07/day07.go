@@ -61,7 +61,7 @@ func eval(id string, exprs map[string][]string, signals map[string]int) int {
 	return result
 }
 
-func part1(input string) int {
+func parse(input string) map[string][]string {
 	exprs := map[string][]string{}
 	for line := range strings.SplitSeq(input, "\n") {
 		if len(line) < 1 {
@@ -71,5 +71,16 @@ func part1(input string) int {
 		output := strings.TrimSpace(parts[1])
 		exprs[output] = strings.Fields(parts[0])
 	}
+	return exprs
+}
+
+func part1(input string) int {
+	exprs := parse(input)
 	return eval("a", exprs, make(map[string]int))
+}
+
+func part2(input string) int {
+	exprs := parse(input)
+	a := eval("a", exprs, make(map[string]int))
+	return eval("a", exprs, map[string]int{"b": a})
 }

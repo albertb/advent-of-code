@@ -34,3 +34,19 @@ func Test_part1(t *testing.T) {
 		})
 	}
 }
+
+func Test_part2(t *testing.T) {
+	tests := map[string]struct {
+		input string
+		want  int
+	}{
+		"puzzle": {puzzle, 2797},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got, want := part2(tt.input), tt.want; got != want {
+				t.Errorf("got part2() = %v, want = %v", got, want)
+			}
+		})
+	}
+}
