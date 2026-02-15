@@ -40,3 +40,34 @@ func part1(input string) int {
 
 	return len(generated)
 }
+
+func part2(input string) int {
+	reps, target := parse(input)
+
+	curr := target
+	steps := 0
+
+	// BFS is too slow for part2. Instead, we do a greedy search, starting from the target and shortening
+	// the string until we reach just 'e'.
+outer:
+	for curr != "e" {
+		changed := false
+		for from, tos := range reps {
+			for _, to := range tos {
+				if strings.Contains(curr, to) {
+					curr = strings.Replace(curr, to, from, 1)
+					changed = true
+					steps++
+					continue outer
+				}
+			}
+		}
+		if !changed {
+			// If we get stuck, start over, map iteration order is randomized, so we'll
+			// eventually get unstuck.
+			curr = target
+			steps = 0
+		}
+	}
+	return steps
+}
